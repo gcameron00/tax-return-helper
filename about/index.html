@@ -1,15 +1,196 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>About</title>
-    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/assets/css/styles.css">
+    <title>About · Tax Return Helper</title>
+    <meta name="description" content="What this site is for, how the checklist works, and what is planned next." />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <script>
+      (function () {
+        try {
+          var p = localStorage.getItem("trh.theme");
+          var dark = p === "dark" || (!p && matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+        } catch (e) {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
   </head>
   <body>
-    <h1>About</h1>
-    <p><a href="/">Back home</a></p>
+    <a class="visually-hidden" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap site-header__inner">
+        <a class="brand" href="/">
+          <span class="brand__mark">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5 8 14.5 16 5"/></svg>
+          </span>
+          <span class="brand__name">Tax Return Helper <span>· Cameron</span></span>
+        </a>
+        <nav class="nav" aria-label="Main">
+          <a href="/">Checklist</a>
+          <a href="/history/">History</a>
+          <a href="/documents/">Documents<span class="soon">Soon</span></a>
+          <a href="/about/" aria-current="page">About</a>
+          <button class="btn btn--icon btn--ghost" type="button" data-theme-toggle aria-label="Toggle theme"></button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="wrap prose">
+        <p class="eyebrow">About</p>
+        <h1>A checklist for the family tax return</h1>
+        <p class="lede">
+          Filing a Swiss tax return means gathering thirty-odd documents from banks,
+          employers, pension funds and insurers — a different set every year, arriving
+          over four months, chased by whoever remembers. This site keeps that list in
+          one place so nobody has to hold it in their head.
+        </p>
+
+        <p>
+          It is built for exactly one household. There is no sign-up, no sharing, no
+          multi-tenancy — those would be complexity in service of nobody.
+        </p>
+
+        <h2 id="purposes">Two purposes</h2>
+        <ol>
+          <li>
+            <strong>Track the checklist.</strong> What has to be collected this year,
+            who is responsible for it, and where each item stands. This is what the
+            site does today.
+          </li>
+          <li>
+            <strong>Hand the files over.</strong> A transfer area so the tax advisor
+            can collect the actual PDFs without a year of email attachments.
+            <a href="/documents/">Planned, not built.</a>
+          </li>
+        </ol>
+
+        <h2 id="concepts">How the checklist works</h2>
+
+        <h3>A year at a time</h3>
+        <p>
+          Each tax year is its own checklist. The site always opens on the most recent
+          one, because that is the one being worked on; earlier years stay available in
+          the <a href="/history/">history</a> exactly as they were collected.
+        </p>
+
+        <h3>Carrying a year forward</h3>
+        <p>
+          The document list barely changes between years, so a new year starts as a copy
+          of the previous one rather than a blank page. Every carried-over item comes
+          across as <em>outstanding</em> — last year's certificate is not this year's
+          certificate. You can optionally leave out anything that was marked
+          <em>not applicable</em>, and keep or drop the previous comments.
+        </p>
+        <p>
+          The list stays fully editable for the whole collection process. Real years
+          throw up documents nobody predicted in January.
+        </p>
+
+        <h3>What a document row holds</h3>
+        <dl class="deflist">
+          <div><dt>Name</dt><dd>What to fetch, in the words the family uses — "Lohnausweis", not "employment income statement schema v2".</dd></div>
+          <div><dt>Owner</dt><dd>Who is going to get it. Not who it legally belongs to — who is on the hook for chasing it.</dd></div>
+          <div><dt>Status</dt><dd>Outstanding, requested, received, or not applicable.</dd></div>
+          <div><dt>Comment</dt><dd>Optional. Where it is, who was chased and when, anything the advisor should know.</dd></div>
+        </dl>
+
+        <h3>Why four statuses</h3>
+        <p>
+          <strong>Requested</strong> is the one that earns its place: most of the delay in a
+          tax return is waiting on a third party, and a list that cannot distinguish
+          "not started" from "asked the pension fund three weeks ago" sends you chasing
+          the same institution twice.
+        </p>
+        <p>
+          <strong>Not applicable</strong> matters too. Deleting a row that does not apply this
+          year loses the knowledge that it was considered — and it will silently vanish
+          from next year's carry-over. Marking it N/A keeps the decision visible and
+          keeps progress honest: the percentage is measured against relevant documents
+          only, so marking something N/A moves the needle forward rather than dragging
+          it down forever.
+        </p>
+
+        <h3>Marking a year final</h3>
+        <p>
+          When everything is collected and handed over, the year is marked final: it
+          becomes read-only and settles into the history. It can be reopened — tax
+          returns come back with questions — but the lock means a closed year cannot be
+          edited by accident while you are looking for last year's numbers.
+        </p>
+
+        <h3>Getting things out</h3>
+        <p>
+          <strong>Print</strong> produces a clean paper or PDF version of the year, without the
+          site chrome. <strong>Export</strong> downloads the year as JSON — a plain, readable
+          backup that is not locked inside this application.
+        </p>
+
+        <h2 id="status">What you are looking at</h2>
+        <p>
+          This is a <strong>front-end prototype</strong>. The interface is real and fully
+          interactive, but there is no server: the checklist is seeded with plausible
+          Swiss example data and your changes are saved to
+          <code>localStorage</code> in this browser only. Nothing is uploaded, and the
+          data will not follow you to another device.
+        </p>
+        <p>
+          All persistence goes through four functions in
+          <code>assets/js/store.js</code> — that is deliberately the only seam that has to
+          change when the backend arrives.
+        </p>
+        <p>
+          <button class="btn btn--danger" type="button" id="btnReset">Reset the example data</button>
+        </p>
+
+        <h2 id="roadmap">Roadmap</h2>
+        <dl class="deflist">
+          <div><dt>Phase 1 ✓</dt><dd>Front-end prototype: checklist, years, carry-over, finalising, history. <em>This.</em></dd></div>
+          <div><dt>Phase 2</dt><dd>Backend on Cloudflare Workers — persistence (D1 or KV), a small JSON API, and household authentication so the list is shared across the family's devices.</dd></div>
+          <div><dt>Phase 3</dt><dd>File uploads to R2, attached to checklist rows, plus an expiring download link for the tax advisor.</dd></div>
+          <div><dt>Later</dt><dd>Reminders for documents that have been "requested" too long, a year-on-year diff, and per-item due dates.</dd></div>
+        </dl>
+        <p>
+          The full breakdown lives in <code>docs/implementation-plan.md</code> in the
+          repository, alongside the data model and the design notes.
+        </p>
+
+        <h2 id="privacy">Privacy</h2>
+        <p>
+          Tax documents are about as sensitive as household data gets. Three rules the
+          build follows: nothing leaves the browser in this phase; when the backend
+          lands, the site is private to the household and not indexed; and files, when
+          they arrive, are shared with the advisor through expiring links rather than
+          being made public.
+        </p>
+
+        <hr class="divide" />
+        <p class="hint">
+          Built as static HTML, CSS and JavaScript — no framework, no build step —
+          deployed to Cloudflare Workers.
+          <a href="https://github.com/gcameron00/tax-return-helper">Source on GitHub</a>.
+        </p>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap site-footer__inner">
+        <span>Tax Return Helper</span>
+        <a href="/">Checklist</a>
+        <a href="/history/">History</a>
+        <a href="https://github.com/gcameron00/tax-return-helper">Source</a>
+        <span class="site-footer__note">Front-end prototype · no data leaves your browser</span>
+      </div>
+    </footer>
+
+    <script defer src="/assets/js/store.js"></script>
+    <script defer src="/assets/js/main.js"></script>
+    <script defer src="/assets/js/about.js"></script>
   </body>
 </html>
