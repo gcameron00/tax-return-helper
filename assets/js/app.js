@@ -10,6 +10,7 @@
   "use strict";
 
   var state = null;
+  var offline = false; // true when showing a cached copy, not the live server
   var currentYear = null; // tax year (number)
   var editingId = null; // item id open in the drawer
   var drawerOpenerId = null; // item id whose row should regain focus on close
@@ -25,13 +26,12 @@
   /* --- Boot -------------------------------------------------------------- */
 
   function init() {
-    state = TRH.load();
-
     [
       "yearSelect",
       "yearBadge",
       "summary",
       "lockNote",
+      "offlineNote",
       "checklist",
       "search",
       "ownerFilter",
@@ -56,11 +56,43 @@
       el[k] = document.getElementById(k);
     });
 
-    // Deep link: /?year=2024. Falls back to the most recent year.
+    el.checklist.innerHTML = '<div class="empty"><div class="empty__title">Loading…</div></div>';
+
+    TRH.onSyncError = function (err) {
+      renderAll();
+      TRH.toast(err && err.message ? err.message : "Couldn't save — reverted");
+    };
+
+    TRH.load().then(
+      function (result) {
+        state = result.state;
+        offline = result.offline;
+        boot();
+      },
+      function (err) {
+        el.checklist.innerHTML =
+          '<div class="empty"><div class="empty__title">Can\'t load the checklist</div>' +
+          "<p>" +
+          TRH.esc(err.message) +
+          "</p></div>";
+      }
+    );
+  }
+
+  function boot() {
+    // Deep link: /?year=2024. Falls back to the most recent year, or shows
+    // an empty state in the unlikely case the household has no years yet.
     var params = new URLSearchParams(location.search);
     var requested = Number(params.get("year"));
     var match = requested ? TRH.yearByTaxYear(state, requested) : null;
-    currentYear = match ? match.taxYear : TRH.latestYear(state).taxYear;
+    var latest = TRH.latestYear(state);
+    if (!match && !latest) {
+      el.checklist.innerHTML =
+        '<div class="empty"><div class="empty__title">No tax years yet</div>' +
+        "<p>Something has gone wrong with the setup — there should always be at least one.</p></div>";
+      return;
+    }
+    currentYear = match ? match.taxYear : latest.taxYear;
 
     bindChrome();
     renderAll();
@@ -70,13 +102,22 @@
     return TRH.yearByTaxYear(state, currentYear);
   }
 
+  // Every existing call site uses this to gate interactivity (disable a
+  // control, hide an add/delete button), never to decide what the lock
+  // banner says — so folding "offline" in here, rather than threading a
+  // second check through every one of them, keeps read-only read-only for
+  // both reasons without changing any call site.
   function isLocked() {
     var y = year();
-    return !!y && y.status === "final";
+    return offline || (!!y && y.status === "final");
   }
 
-  function commit(message, undoSnapshot) {
-    TRH.save(state);
+  // Local-only: caches state and re-renders. Anything that needs the server
+  // calls TRH.applyPatch/createX/deleteX itself, separately — this never
+  // touches the network. `onUndo`, when given, runs before the snapshot is
+  // restored, so a caller can cancel a network call it hasn't sent yet.
+  function commit(message, undoSnapshot, onUndo) {
+    TRH.cacheState(state);
     renderAll();
     if (message) {
       TRH.toast(
@@ -85,8 +126,9 @@
           ? {
               label: "Undo",
               onClick: function () {
+                if (onUndo) onUndo();
                 state = JSON.parse(undoSnapshot);
-                TRH.save(state);
+                TRH.cacheState(state);
                 renderAll();
               }
             }
@@ -131,12 +173,14 @@
       "<span>" +
       (y.status === "final" ? "Reopen" : "Mark final") +
       "</span>";
+    el.btnFinal.disabled = offline;
 
     el.btnAddCategory.disabled = isLocked();
 
     // Only the newest year can spawn a successor, and only one per tax year.
     var latest = TRH.latestYear(state);
     el.btnNewYear.title = "Start the " + (latest.taxYear + 1) + " checklist";
+    el.btnNewYear.disabled = offline;
   }
 
   function renderLockNote() {
@@ -153,6 +197,14 @@
       TRH.esc(TRH.formatDate(y.finalizedAt)) +
       " and is read-only.</span>" +
       '<button class="btn btn--sm" type="button" data-action="reopen">Reopen</button>';
+  }
+
+  function renderOfflineNote() {
+    el.offlineNote.hidden = !offline;
+    if (!offline) return;
+    el.offlineNote.innerHTML =
+      TRH.icon("info") +
+      "<span>Can't reach the server — showing the last saved copy. Read-only until it's back.</span>";
   }
 
   /* --- Rendering: summary ------------------------------------------------ */
@@ -451,6 +503,7 @@
   function renderAll() {
     renderYearBar();
     renderLockNote();
+    renderOfflineNote();
     renderSummary();
     renderFilters();
     renderChecklist();
@@ -601,21 +654,21 @@
     var commentEl = el.drawerBody.querySelector("#f-comment");
 
     nameEl.addEventListener("input", function () {
-      item.name = nameEl.value;
-      TRH.save(state);
+      TRH.applyPatch(state, item, { name: nameEl.value }, "/items/" + item.id);
+      TRH.cacheState(state);
       renderChecklist();
       renderSummary();
     });
 
     commentEl.addEventListener("input", function () {
-      item.comment = commentEl.value;
-      TRH.save(state);
+      TRH.applyPatch(state, item, { comment: commentEl.value }, "/items/" + item.id);
+      TRH.cacheState(state);
       renderChecklist();
     });
 
     el.drawerBody.querySelector("#f-owner").addEventListener("change", function (e) {
-      item.ownerId = e.target.value;
-      TRH.save(state);
+      TRH.applyPatch(state, item, { ownerId: e.target.value }, "/items/" + item.id);
+      TRH.cacheState(state);
       renderChecklist();
     });
 
@@ -626,8 +679,8 @@
     el.drawerBody.querySelector("#f-status").addEventListener("click", function (e) {
       var btn = e.target.closest("[data-status]");
       if (!btn) return;
-      item.status = btn.dataset.status;
-      TRH.save(state);
+      TRH.applyPatch(state, item, { status: btn.dataset.status }, "/items/" + item.id);
+      TRH.cacheState(state);
       renderAll();
     });
   }
@@ -636,14 +689,29 @@
     var y = year();
     var found = findItem(itemId);
     if (!found || found.cat.id === targetCatId) return;
-    found.cat.items = found.cat.items.filter(function (i) {
-      return i.id !== itemId;
-    });
     var target = y.categories.filter(function (c) {
       return c.id === targetCatId;
     })[0];
-    if (target) target.items.push(found.item);
+    if (!target) return;
+    var sourceCat = found.cat;
+    // Category membership is structural (which array the item sits in), not
+    // a field on the item, so this isn't a TRH.applyPatch case — move it
+    // locally, then sync, then undo the move on failure ourselves.
+    sourceCat.items = sourceCat.items.filter(function (i) {
+      return i.id !== itemId;
+    });
+    target.items.push(found.item);
     commit();
+
+    TRH.moveItem(itemId, targetCatId).catch(function (err) {
+      target.items = target.items.filter(function (i) {
+        return i.id !== itemId;
+      });
+      sourceCat.items.push(found.item);
+      TRH.cacheState(state);
+      renderAll();
+      TRH.toast(err.message || "Couldn't move the document — reverted");
+    });
   }
 
   /* --- Dialog helpers ---------------------------------------------------- */
@@ -699,7 +767,8 @@
     if (isLocked()) return;
     var found = findItem(id);
     if (!found) return;
-    found.item.status = found.item.status === "received" ? "outstanding" : "received";
+    var next = found.item.status === "received" ? "outstanding" : "received";
+    TRH.applyPatch(state, found.item, { status: next }, "/items/" + id);
     commit();
   }
 
@@ -709,22 +778,28 @@
       return c.id === catId;
     })[0];
     if (!cat) return;
-    var item = {
-      id: TRH.uid("it"),
+    var owner = state.people[0];
+    TRH.createItem(catId, {
       name: "",
-      ownerId: state.people[0].id,
+      ownerId: owner ? owner.id : null,
       status: "outstanding",
       comment: ""
-    };
-    cat.items.push(item);
-    cat.collapsed = false;
-    // Clear filters that would immediately hide the new empty row.
-    view.query = "";
-    view.statuses = [];
-    view.ownerId = "";
-    TRH.save(state);
-    renderAll();
-    openDrawer(item.id, true);
+    }).then(
+      function (item) {
+        cat.items.push(item);
+        cat.collapsed = false;
+        // Clear filters that would immediately hide the new empty row.
+        view.query = "";
+        view.statuses = [];
+        view.ownerId = "";
+        TRH.cacheState(state);
+        renderAll();
+        openDrawer(item.id, true);
+      },
+      function (err) {
+        TRH.toast(err.message || "Couldn't add the document");
+      }
+    );
   }
 
   function addCategory() {
@@ -735,13 +810,15 @@
       cta: "Add category"
     }).then(function (name) {
       if (!name) return;
-      year().categories.push({
-        id: TRH.uid("cat"),
-        name: name,
-        collapsed: false,
-        items: []
-      });
-      commit("Category added");
+      TRH.createCategory(currentYear, name).then(
+        function (cat) {
+          year().categories.push(cat);
+          commit("Category added");
+        },
+        function (err) {
+          TRH.toast(err.message || "Couldn't add the category");
+        }
+      );
     });
   }
 
@@ -757,7 +834,7 @@
       cta: "Rename"
     }).then(function (name) {
       if (!name) return;
-      cat.name = name;
+      TRH.applyPatch(state, cat, { name: name }, "/categories/" + catId);
       commit();
     });
   }
@@ -788,7 +865,22 @@
       y.categories = y.categories.filter(function (c) {
         return c.id !== catId;
       });
-      commit("Category deleted", before);
+      // The actual DELETE waits out the undo window — clicking Undo within
+      // it means nothing was ever sent, so there is nothing to reconcile.
+      // Known gap: closing the tab inside that window drops the pending
+      // delete; the row reappears next load (GET /api/state is the source
+      // of truth), which is surprising but not destructive.
+      var timer = setTimeout(function () {
+        TRH.deleteCategory(catId).catch(function () {
+          state = JSON.parse(before);
+          TRH.cacheState(state);
+          renderAll();
+          TRH.toast("Couldn't delete — restored");
+        });
+      }, 7000);
+      commit("Category deleted", before, function () {
+        clearTimeout(timer);
+      });
     });
   }
 
@@ -797,18 +889,30 @@
     if (!found) return;
     var before = snapshot();
     var name = found.item.name || "Untitled document";
+    var id = editingId;
     found.cat.items = found.cat.items.filter(function (i) {
-      return i.id !== editingId;
+      return i.id !== id;
     });
     closeDrawer();
-    commit('"' + name + '" deleted', before);
+    var timer = setTimeout(function () {
+      TRH.deleteItem(id).catch(function () {
+        state = JSON.parse(before);
+        TRH.cacheState(state);
+        renderAll();
+        TRH.toast("Couldn't delete — restored");
+      });
+    }, 7000);
+    commit('"' + name + '" deleted', before, function () {
+      clearTimeout(timer);
+    });
   }
 
   function toggleFinal() {
     var y = year();
     if (y.status === "final") {
-      y.status = "open";
-      y.finalizedAt = null;
+      // finalizedAt is server-computed, not set optimistically here, so the
+      // banner needs a second render once the real value comes back.
+      TRH.applyPatch(state, y, { status: "open" }, "/years/" + y.taxYear).then(renderAll);
       commit(y.taxYear + " reopened for editing");
       return;
     }
@@ -830,8 +934,7 @@
       cta: "Mark final"
     }).then(function (ok) {
       if (!ok) return;
-      y.status = "final";
-      y.finalizedAt = new Date().toISOString().slice(0, 10);
+      TRH.applyPatch(state, y, { status: "final" }, "/years/" + y.taxYear).then(renderAll);
       commit(y.taxYear + " marked final");
     });
   }
@@ -857,16 +960,24 @@
       return;
     }
     var source = TRH.latestYear(state);
-    var fresh = TRH.carryOver(source, taxYear, {
+    TRH.createYear({
+      fromYear: source.taxYear,
+      taxYear: taxYear,
       skipNa: dlg.querySelector("#ny-skipna").checked,
       keepComments: dlg.querySelector("#ny-comments").checked
-    });
-    state.years.push(fresh);
-    currentYear = taxYear;
-    view.query = "";
-    view.statuses = [];
-    view.ownerId = "";
-    commit(taxYear + " checklist created from " + source.taxYear);
+    }).then(
+      function (fresh) {
+        state.years.push(fresh);
+        currentYear = taxYear;
+        view.query = "";
+        view.statuses = [];
+        view.ownerId = "";
+        commit(taxYear + " checklist created from " + source.taxYear);
+      },
+      function (err) {
+        TRH.toast(err.message || "Couldn't create the " + taxYear + " checklist");
+      }
+    );
   }
 
   function exportYear() {

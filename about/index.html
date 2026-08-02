@@ -134,25 +134,31 @@
 
         <h2 id="status">What you are looking at</h2>
         <p>
-          This is a <strong>front-end prototype</strong>. The interface is real and fully
-          interactive, but there is no server: the checklist is seeded with plausible
-          Swiss example data and your changes are saved to
-          <code>localStorage</code> in this browser only. Nothing is uploaded, and the
-          data will not follow you to another device.
+          The interface talks to a real backend: Cloudflare D1 behind a small API
+          (<code>worker/index.js</code>), so the checklist is the same on every device,
+          for anyone in the household. The whole site sits behind
+          <strong>Cloudflare Access</strong> — nothing is public.
         </p>
         <p>
-          All persistence goes through four functions in
-          <code>assets/js/store.js</code> — that is deliberately the only seam that has to
-          change when the backend arrives.
+          A copy of the last-loaded checklist is cached in this browser so a spotty
+          connection at a bank branch shows a stale, read-only list instead of a spinner —
+          see the banner that appears when that happens. It is a cache of the server, not
+          a second source of truth.
         </p>
         <p>
-          <button class="btn btn--danger" type="button" id="btnReset">Reset the example data</button>
+          All of that goes through the functions in
+          <code>assets/js/store.js</code> — deliberately the only place that touches
+          <code>fetch</code> or <code>localStorage</code>, so the screens themselves
+          did not have to change shape when the backend arrived.
+        </p>
+        <p>
+          <button class="btn" type="button" id="btnReset">Clear local cache</button>
         </p>
 
         <h2 id="roadmap">Roadmap</h2>
         <dl class="deflist">
-          <div><dt>Phase 1 ✓</dt><dd>Front-end prototype: checklist, years, carry-over, finalising, history. <em>This.</em></dd></div>
-          <div><dt>Phase 2</dt><dd>Backend on Cloudflare Workers — persistence (D1 or KV), a small JSON API, and household authentication so the list is shared across the family's devices.</dd></div>
+          <div><dt>Phase 1 ✓</dt><dd>Front-end prototype: checklist, years, carry-over, finalising, history.</dd></div>
+          <div><dt>Phase 2 ✓</dt><dd>Backend on Cloudflare Workers — D1 storage, a JSON API, Cloudflare Access for household authentication, and the front end wired to it. <em>This.</em></dd></div>
           <div><dt>Phase 3</dt><dd>File uploads to R2, attached to checklist rows, plus an expiring download link for the tax advisor.</dd></div>
           <div><dt>Later</dt><dd>Reminders for documents that have been "requested" too long, a year-on-year diff, and per-item due dates.</dd></div>
         </dl>
@@ -163,11 +169,10 @@
 
         <h2 id="privacy">Privacy</h2>
         <p>
-          Tax documents are about as sensitive as household data gets. Three rules the
-          build follows: nothing leaves the browser in this phase; when the backend
-          lands, the site is private to the household and not indexed; and files, when
-          they arrive, are shared with the advisor through expiring links rather than
-          being made public.
+          Tax documents are about as sensitive as household data gets. The site sits
+          behind Cloudflare Access — nobody reaches it, API included, without
+          authenticating first — and is not indexed. Files, once Phase 3 lands, will be
+          shared with the advisor through expiring links rather than being made public.
         </p>
 
         <hr class="divide" />

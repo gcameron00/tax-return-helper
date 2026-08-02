@@ -1,10 +1,12 @@
 /* ==========================================================================
-   store.js — data model, seed data and persistence.
+   store.js — data model, seed data and the backend seam.
 
-   MOCK-UP ONLY. Everything lives in localStorage under a single key so the
-   prototype feels real (edits survive a reload) without a backend. When the
-   API lands, the four functions at the bottom — load/save/patchYear/replace —
-   are the seam to swap for fetch() calls. Nothing else touches storage.
+   Phase 2.4: the checklist lives in D1, behind the API in worker/index.js.
+   Everything that reaches the server goes through the functions in the
+   "Backend seam" section at the bottom of this file — nothing else in the
+   app touches `fetch`. A copy of the last-loaded state is cached to
+   localStorage so a stale, read-only view is possible offline (see
+   TRH.load); it is a cache of the server, not a second source of truth.
    ========================================================================== */
 
 window.TRH = window.TRH || {};
@@ -12,7 +14,7 @@ window.TRH = window.TRH || {};
 (function (TRH) {
   "use strict";
 
-  var STORAGE_KEY = "trh.state.v1";
+  var CACHE_KEY = "trh.cache.v1";
   var SCHEMA_VERSION = 1;
 
   /* --- Vocabularies ------------------------------------------------------ */
@@ -322,35 +324,140 @@ window.TRH = window.TRH || {};
     };
   };
 
-  /* --- Persistence (the backend seam) ------------------------------------ */
+  /* --- Backend seam -------------------------------------------------------
+     Every function here either reads from D1 (via the API) or writes to it.
+     Mutations apply optimistically to the `state` object passed in — the
+     caller re-renders right after calling, before the network settles — and
+     roll back and call TRH.onSyncError() if the request fails. Conflict
+     policy is silent last-write-wins (docs/implementation-plan.md, 2.2): a
+     failed write means *this* write didn't land, not that someone else's did.
+     ------------------------------------------------------------------------- */
 
+  function cacheState(state) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+    } catch (e) {
+      /* private mode or full storage — the cache is best-effort */
+    }
+  }
+  TRH.cacheState = cacheState;
+
+  function cachedState() {
+    try {
+      var raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      return parsed && parsed.schemaVersion === SCHEMA_VERSION ? parsed : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Set by app.js/history.js at boot. Called when a background write fails
+  // after already having been applied optimistically, so the screen can
+  // re-render the rolled-back state and say something happened.
+  TRH.onSyncError = function () {};
+
+  function request(method, path, body) {
+    var init = { method: method, headers: {} };
+    if (body !== undefined) {
+      init.headers["content-type"] = "application/json";
+      init.body = JSON.stringify(body);
+    }
+    return fetch("/api" + path, init).then(function (res) {
+      var ct = res.headers.get("content-type") || "";
+      var parse = ct.indexOf("application/json") !== -1 ? res.json() : res.text();
+      return parse.then(function (data) {
+        if (!res.ok) {
+          throw new Error((data && data.error) || "Request failed (" + res.status + ")");
+        }
+        return data;
+      });
+    });
+  }
+
+  /**
+   * Loads the household's state from the server. Falls back to the last
+   * cached copy — read-only, per the caller — if the network is unavailable;
+   * throws only when there is truly nothing to show (offline on first visit).
+   * @returns {Promise<{state: object, offline: boolean}>}
+   */
   TRH.load = function () {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        var parsed = JSON.parse(raw);
-        if (parsed && parsed.schemaVersion === SCHEMA_VERSION) return parsed;
+    return request("GET", "/state").then(
+      function (state) {
+        cacheState(state);
+        return { state: state, offline: false };
+      },
+      function () {
+        var cached = cachedState();
+        if (!cached) throw new Error("Can't reach the server and nothing is cached yet.");
+        return { state: cached, offline: true };
       }
-    } catch (e) {
-      /* corrupt or unavailable storage — fall through to a fresh seed */
-    }
-    var fresh = seed();
-    TRH.save(fresh);
-    return fresh;
+    );
   };
 
-  TRH.save = function (state) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      return true;
-    } catch (e) {
-      return false;
-    }
+  // Applies `fields` to `target` (an item/category/year object already
+  // living inside `state`) immediately, persists the merged server response
+  // over it on success, or reverts it and calls TRH.onSyncError on failure.
+  // Never rejects — onSyncError is the one place failure is handled, so
+  // every call site can fire-and-forget without a .catch().
+  TRH.applyPatch = function (state, target, fields, path) {
+    var before = {};
+    Object.keys(fields).forEach(function (k) {
+      before[k] = target[k];
+    });
+    Object.assign(target, fields);
+    cacheState(state);
+    return request("PATCH", path, fields).then(
+      function (fresh) {
+        if (fresh && typeof fresh === "object") Object.assign(target, fresh);
+        cacheState(state);
+        return target;
+      },
+      function (err) {
+        Object.assign(target, before);
+        cacheState(state);
+        TRH.onSyncError(err);
+        return target;
+      }
+    );
   };
 
+  TRH.createYear = function (opts) {
+    return request("POST", "/years", opts);
+  };
+
+  TRH.createCategory = function (taxYear, name) {
+    return request("POST", "/years/" + taxYear + "/categories", { name: name });
+  };
+
+  TRH.deleteCategory = function (id) {
+    return request("DELETE", "/categories/" + id);
+  };
+
+  TRH.createItem = function (categoryId, fields) {
+    return request("POST", "/categories/" + categoryId + "/items", fields);
+  };
+
+  // Category membership is structural in the client's tree (not a field on
+  // the item), so this is a plain request rather than a TRH.applyPatch call
+  // — the caller moves the item between category.items arrays itself.
+  TRH.moveItem = function (id, categoryId) {
+    return request("PATCH", "/items/" + id, { categoryId: categoryId });
+  };
+
+  TRH.deleteItem = function (id) {
+    return request("DELETE", "/items/" + id);
+  };
+
+  // Not on the live app's path — TRH.createYear() asks the server to carry a
+  // year forward now, and TRH.seed() (assigned above, near its definition)
+  // isn't called by app.js any more — but both stay for tests, per
+  // implementation-plan.md's cross-cutting/Testing section, and as a
+  // documented reference for what carry-over means.
   TRH.reset = function () {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(CACHE_KEY);
     } catch (e) {
       /* nothing to do */
     }

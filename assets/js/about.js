@@ -1,5 +1,6 @@
-/* Reset control on the About page — the prototype's only escape hatch back to
-   the seeded example data. */
+/* Cache control on the About page. There is a real server now (Phase 2), so
+   this can no longer reset real data — it clears the local offline cache and
+   reloads from the server, which is only useful if a stale copy is stuck. */
 
 (function (TRH) {
   "use strict";
@@ -9,8 +10,7 @@
     if (!btn) return;
     btn.addEventListener("click", function () {
       TRH.reset();
-      TRH.load(); // re-seeds and writes back
-      TRH.toast("Example data restored");
+      location.reload();
     });
   }
 

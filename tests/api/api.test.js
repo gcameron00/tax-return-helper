@@ -135,6 +135,32 @@ describe("items", () => {
     const patched = await api("PATCH", `/api/items/${created.body.id}`, { status: "received" });
     expect(patched.status).toBe(404);
   });
+
+  it("moves an item to another category in the same year via categoryId", async () => {
+    const otherCat = await api("POST", "/api/years/2025/categories", { name: "Mortgage" });
+    const created = await api("POST", `/api/categories/${categoryId}/items`, { name: "X" });
+
+    const res = await api("PATCH", `/api/items/${created.body.id}`, { categoryId: otherCat.body.id });
+    expect(res.status).toBe(200);
+    expect(res.body.categoryId).toBe(otherCat.body.id);
+
+    const year = await api("GET", "/api/years/2025");
+    const target = year.body.categories.find((c) => c.id === otherCat.body.id);
+    const source = year.body.categories.find((c) => c.id === categoryId);
+    expect(target.items.map((i) => i.id)).toContain(created.body.id);
+    expect(source.items.map((i) => i.id)).not.toContain(created.body.id);
+  });
+
+  it("rejects moving an item to a category in a different tax year", async () => {
+    await api("POST", "/api/years", { taxYear: 2024 });
+    const otherYearCat = await api("POST", "/api/years/2024/categories", { name: "Salary" });
+    const created = await api("POST", `/api/categories/${categoryId}/items`, { name: "X" });
+
+    const res = await api("PATCH", `/api/items/${created.body.id}`, {
+      categoryId: otherYearCat.body.id
+    });
+    expect(res.status).toBe(400);
+  });
 });
 
 describe("GET /api/state", () => {

@@ -7,9 +7,31 @@
   "use strict";
 
   function render() {
-    var state = TRH.load();
     var list = document.getElementById("yearlist");
     var summary = document.getElementById("historySummary");
+    var offlineNote = document.getElementById("offlineNote");
+    list.innerHTML = '<div class="empty"><div class="empty__title">Loading…</div></div>';
+
+    TRH.load().then(
+      function (result) {
+        renderYears(result.state, result.offline, list, summary, offlineNote);
+      },
+      function (err) {
+        list.innerHTML =
+          '<div class="empty"><div class="empty__title">Can\'t load history</div><p>' +
+          TRH.esc(err.message) +
+          "</p></div>";
+      }
+    );
+  }
+
+  function renderYears(state, offline, list, summary, offlineNote) {
+    offlineNote.hidden = !offline;
+    if (offline) {
+      offlineNote.innerHTML =
+        TRH.icon("info") + "<span>Can't reach the server — showing the last saved copy.</span>";
+    }
+
     var years = TRH.sortedYears(state);
 
     var totalDocs = 0;

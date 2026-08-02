@@ -7,10 +7,10 @@ bank year-end statements, mortgage interest, pillar 3a certificates, childcare i
 from a dozen institutions, over several months, in a set that is slightly different every
 year. This site keeps that list in one place so nobody has to hold it in their head.
 
-**Status: front-end prototype, backend in progress.** The interface is complete and
-interactive. A D1-backed API exists (`worker/index.js`) but the front end isn't wired to
-it yet — changes are still saved to `localStorage` in your browser only. See
-[`docs/implementation-plan.md`](docs/implementation-plan.md) for where this is headed.
+**Status: live.** Phase 2 is built: the checklist is backed by Cloudflare D1 behind an
+API (`worker/index.js`), shared across every device in the household, behind Cloudflare
+Access. `localStorage` now holds a read-only offline cache, not the source of truth. See
+[`docs/implementation-plan.md`](docs/implementation-plan.md) for what's next (Phase 3).
 
 ---
 
@@ -74,7 +74,7 @@ history/index.html      Previous years
 documents/index.html    Phase 3 placeholder
 assets/
   css/styles.css        Whole design system: tokens, components, print, responsive
-  js/store.js           Data model, seed data, persistence  ← the backend seam
+  js/store.js           Data model + the backend seam: fetch, cache, optimistic writes
   js/main.js            Shared chrome: theme, icons, escaping, toasts
   js/app.js             Checklist screen logic
   js/history.js         History screen logic
@@ -125,12 +125,12 @@ changes when a phase of `implementation-plan.md` deliberately calls for it.
 Tax documents are about as sensitive as household data gets. Three rules the build
 follows:
 
-1. In this phase, nothing leaves the browser — there is no server to send it to.
-2. When the backend lands, the site is private to the household and not indexed.
-3. When file upload lands, files are shared with the advisor through expiring links,
-   never made public.
-
-The seeded example data is fictional.
+1. The whole site — pages and API alike — sits behind Cloudflare Access. Nothing is
+   public, and it is not indexed.
+2. `localStorage` holds a read-only offline cache of the last-loaded checklist, not a
+   second copy of the data; D1 is the source of truth.
+3. When file upload lands (Phase 3), files are shared with the advisor through expiring
+   links, never made public.
 
 ## Documentation
 

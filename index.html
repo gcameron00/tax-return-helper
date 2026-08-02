@@ -79,6 +79,10 @@
         <!-- Read-only banner for finalised years -->
         <div class="locked-note" id="lockNote" hidden></div>
 
+        <!-- Shown instead of the checklist while loading, and as a banner
+             over a stale cached copy when the server can't be reached. -->
+        <div class="offline-note" id="offlineNote" hidden></div>
+
         <!-- Summary -->
         <section class="card card__pad summary" id="summary" aria-label="Progress summary"></section>
 
@@ -106,10 +110,6 @@
         <!-- The list -->
         <div id="checklist"></div>
 
-        <p class="hint" style="margin-top:22px">
-          Prototype — everything you change is stored in this browser only.
-          <a href="/about/">How this will work with a backend</a>.
-        </p>
       </div>
     </main>
 
@@ -119,7 +119,7 @@
         <a href="/about/">About</a>
         <a href="/history/">History</a>
         <a href="https://github.com/gcameron00/tax-return-helper">Source</a>
-        <span class="site-footer__note">Front-end prototype · no data leaves your browser</span>
+        <span class="site-footer__note">Private to the Cameron household · behind Cloudflare Access</span>
       </div>
     </footer>
 

@@ -169,9 +169,13 @@ POST   /api/years/:taxYear/categories
 PATCH  /api/categories/:id            {name}
 DELETE /api/categories/:id
 POST   /api/categories/:id/items
-PATCH  /api/items/:id                 {name, ownerId, status, comment}
+PATCH  /api/items/:id                 {name, ownerId, status, comment, categoryId}
 DELETE /api/items/:id
 ```
+
+`categoryId` on an item PATCH moves it between categories — the drawer's "Category"
+field. It is rejected (`400`) if the target category belongs to a different tax year;
+the UI only ever offers categories from the year already open.
 
 Two things worth getting right at that point:
 

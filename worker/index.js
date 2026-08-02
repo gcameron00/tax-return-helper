@@ -314,6 +314,12 @@ async function patchItem(id, request, env) {
   if (!body) return error(400, "Invalid JSON body");
   if (body.status !== undefined && !STATUSES.has(body.status)) return error(400, "Invalid status");
 
+  if (body.categoryId !== undefined) {
+    var target = await categoryYear(env, body.categoryId);
+    if (!target) return error(404, "Target category not found");
+    if (target.taxYear !== loc.taxYear) return error(400, "Cannot move an item to a different tax year");
+  }
+
   var fields = [];
   var values = [];
   if (body.name !== undefined) {
@@ -332,6 +338,10 @@ async function patchItem(id, request, env) {
     fields.push("comment = ?");
     values.push(body.comment);
   }
+  if (body.categoryId !== undefined) {
+    fields.push("category_id = ?");
+    values.push(body.categoryId);
+  }
   fields.push("updated_at = ?");
   values.push(new Date().toISOString());
   values.push(id);
@@ -340,9 +350,16 @@ async function patchItem(id, request, env) {
   await stmt.bind.apply(stmt, values).run();
 
   var row = await env.DB.prepare(
-    "SELECT id, name, owner_id, status, comment FROM items WHERE id = ?"
+    "SELECT id, name, owner_id, status, comment, category_id FROM items WHERE id = ?"
   ).bind(id).first();
-  return json({ id: row.id, name: row.name, ownerId: row.owner_id, status: row.status, comment: row.comment });
+  return json({
+    id: row.id,
+    name: row.name,
+    ownerId: row.owner_id,
+    status: row.status,
+    comment: row.comment,
+    categoryId: row.category_id
+  });
 }
 
 async function deleteItem(id, env) {

@@ -1071,6 +1071,26 @@ main {
   margin-inline-start: auto;
 }
 
+/* Neutral, not the final-year amber — this says "stale", not "locked". */
+.offline-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 15px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-2, var(--c-surface));
+  color: var(--c-text-2);
+  border-radius: var(--radius);
+  font-size: 13.5px;
+  margin-bottom: 16px;
+}
+
+.offline-note svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
 /* --- Drawer --------------------------------------------------------------- */
 
 .scrim {
