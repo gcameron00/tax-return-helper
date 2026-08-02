@@ -8,3 +8,12 @@ workers_dev = true
 
 [assets]
 directory = "."
+
+# Phase 2 storage. No `main` Worker script consumes this binding yet — that
+# lands with the fetch handler in Phase 2.2 — but the binding is required
+# here for `wrangler d1 migrations` to know which database to target.
+[[d1_databases]]
+binding = "DB"
+database_name = "tax-return-helper-db"
+database_id = "921a90cd-daa4-4447-ba67-e763e53f78f1"
+migrations_dir = "migrations"
