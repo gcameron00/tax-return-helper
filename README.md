@@ -7,8 +7,10 @@ bank year-end statements, mortgage interest, pillar 3a certificates, childcare i
 from a dozen institutions, over several months, in a set that is slightly different every
 year. This site keeps that list in one place so nobody has to hold it in their head.
 
-**Status: front-end prototype.** The interface is complete and interactive; there is no
-backend yet. Changes are saved to `localStorage` in your browser only.
+**Status: front-end prototype, backend in progress.** The interface is complete and
+interactive. A D1-backed API exists (`worker/index.js`) but the front end isn't wired to
+it yet — changes are still saved to `localStorage` in your browser only. See
+[`docs/implementation-plan.md`](docs/implementation-plan.md) for where this is headed.
 
 ---
 
@@ -82,14 +84,17 @@ docs/
   data-model.md         The shape of the data and why
   implementation-plan.md Phased build-out plan
   design-notes.md       Interface and visual decisions
-wrangler.toml           Cloudflare deploy config — do not edit
+worker/index.js         The API (Phase 2.2), fronting the static assets
+migrations/             D1 schema migrations, applied by wrangler and by tests
+tests/                  vitest: store.js unit tests + API integration tests
+wrangler.toml           Cloudflare deploy config — changed deliberately per phase, see implementation-plan.md
 .assetsignore           Files excluded from the deployed bundle — do not edit
 .github/workflows/      CI and deployment — do not edit
 ```
 
 ## Running it
 
-No build step, no dependencies. Any static file server works:
+The site itself has no build step. Any static file server works:
 
 ```bash
 python3 -m http.server 8080
@@ -99,12 +104,21 @@ python3 -m http.server 8080
 Opening `index.html` directly from the filesystem mostly works, but the root-absolute
 asset paths (`/assets/...`) need a server, so use one.
 
+The API and its tests do have dependencies (`npm install`, see `package.json`) — these
+are dev/test tooling only and never ship to the browser.
+
+```bash
+npm install
+npm test               # store.js unit tests + API integration tests
+```
+
 ## Deployment
 
-Pushed to `main` → deployed to Cloudflare Workers with static assets by the workflow in
-`.github/workflows/`. Nothing in this project needs compiling; the repository *is* the
-site. `wrangler.toml`, `.assetsignore` and `.github/workflows/` are owned by the
-deployment setup and are not modified by feature work.
+Pushed to `main` → tests run, D1 migrations apply, then the site deploys to Cloudflare
+Workers, all via the workflow in `.github/workflows/`. Nothing in this project needs
+compiling; the repository *is* the site. `.assetsignore` and `.github/workflows/` are
+owned by the deployment setup and are not modified by feature work; `wrangler.toml`
+changes when a phase of `implementation-plan.md` deliberately calls for it.
 
 ## Data and privacy
 

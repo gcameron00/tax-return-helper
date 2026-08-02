@@ -3,15 +3,18 @@
 # by .github/workflows/deploy.yml. Pages-target sites ignore this file
 # (it has no pages_build_output_dir).
 name = "generic-website"
+main = "worker/index.js"
 compatibility_date = "2026-07-01"
 workers_dev = true
 
+[observability]
+enabled = true
+
 [assets]
 directory = "."
+binding = "ASSETS"
 
-# Phase 2 storage. No `main` Worker script consumes this binding yet — that
-# lands with the fetch handler in Phase 2.2 — but the binding is required
-# here for `wrangler d1 migrations` to know which database to target.
+# Phase 2 storage. See worker/index.js for the fetch handler that uses it.
 [[d1_databases]]
 binding = "DB"
 database_name = "tax-return-helper-db"

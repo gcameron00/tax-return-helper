@@ -40,7 +40,7 @@ That feedback is worth more than any amount of backend work done in the meantime
 
 **Goal:** the checklist is the same on every family device.
 
-### 2.1 Storage — pick D1
+### 2.1 Storage — pick D1 ✅ *built*
 
 Cloudflare D1 (SQLite) over KV. The data is relational — years contain categories contain
 items — and per-item updates from two phones at once are the normal case. KV's
@@ -62,7 +62,7 @@ the existing **Export** button already produces exactly the one JSON snapshot a 
 import needs; write a small seed script that reads it rather than building a migration
 path speculatively now.
 
-### 2.2 API
+### 2.2 API ✅ *built*
 
 The Worker gains a `fetch` handler in front of the static assets. Routes as listed in
 [`data-model.md`](data-model.md#planned-api-shape). Two rules to enforce **server-side**,

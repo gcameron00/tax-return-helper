@@ -10,3 +10,10 @@ node_modules
 package.json
 package-lock.json
 .wrangler
+
+# Worker source, schema and tests — not site content, served by the fetch
+# handler / applied via wrangler, never meant to be a static file route.
+worker
+migrations
+tests
+vitest.config.js

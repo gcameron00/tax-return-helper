@@ -1,0 +1,14 @@
+{
+  "name": "tax-return-helper",
+  "private": true,
+  "type": "module",
+  "description": "Test tooling only — the site itself has no build step. See README.md.",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.20.1",
+    "jsdom": "^30.0.1",
+    "vitest": "^4.1.10"
+  }
+}
