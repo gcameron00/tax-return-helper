@@ -36,7 +36,7 @@ That feedback is worth more than any amount of backend work done in the meantime
 
 ---
 
-## Phase 2 — Backend and shared state
+## Phase 2 — Backend and shared state ✅ *built*
 
 **Goal:** the checklist is the same on every family device.
 
@@ -91,7 +91,7 @@ identity arrives in a header if per-person attribution is wanted later.
 Live at the custom domain `tax-helper.gcameron.com`. `workers_dev` is disabled
 (`wrangler.toml`) so that isn't a second, un-gated way to reach the same Worker.
 
-### 2.4 Wiring the front end
+### 2.4 Wiring the front end ✅ *built*
 
 `TRH.load()` / `TRH.save()` in `store.js` become `fetch` calls. Because that is the only
 code that touches storage, the screens do not change. Work needed:
