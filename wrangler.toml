@@ -5,7 +5,10 @@
 name = "generic-website"
 main = "worker/index.js"
 compatibility_date = "2026-07-01"
-workers_dev = true
+# Disabled: the site lives at the custom domain tax-helper.gcameron.com,
+# behind Cloudflare Access. The workers.dev URL would be a second, unrelated
+# entry point to the same Worker not covered by that Access application.
+workers_dev = false
 
 [observability]
 enabled = true

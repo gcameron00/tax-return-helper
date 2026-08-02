@@ -81,15 +81,15 @@ only if the household grows past the size where that assumption holds.
 Enable Workers Logs on the `fetch` handler. There is no ops team behind this app; "why
 didn't Anna's tick save" needs to be answerable from a log, not a guess.
 
-### 2.3 Authentication
+### 2.3 Authentication ✅ *built*
 
 The site is for one household, so the cheapest thing that is actually private:
 **Cloudflare Access** in front of the whole Worker, with the family's email addresses on
 the allow list. No password storage, no session code, no account management, and the
 identity arrives in a header if per-person attribution is wanted later.
 
-Fallback if Access is unavailable on the plan: a single shared passphrase exchanged for a
-signed, HTTP-only cookie. Weaker, but still not the open internet.
+Live at the custom domain `tax-helper.gcameron.com`. `workers_dev` is disabled
+(`wrangler.toml`) so that isn't a second, un-gated way to reach the same Worker.
 
 ### 2.4 Wiring the front end
 
