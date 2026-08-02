@@ -133,9 +133,8 @@ reading the code does not cover. That changes with the backend: phase 2 should a
 is already excluded from the deployed bundle.
 
 **Accessibility.** Phase 1 ships keyboard-operable rows, labelled controls, visible focus
-rings, `aria-pressed` on the toggles, live-region toasts, and reduced-motion support. The
-known gaps to close: focus is not yet trapped inside the drawer, and the drawer does not
-restore focus to the row that opened it.
+rings, `aria-pressed` on the toggles, live-region toasts, reduced-motion support, and a
+drawer that traps Tab and restores focus to the triggering row's edit control on close.
 
 **Performance.** Four small static files, no framework, no build step. The whole list is
 re-rendered on every change, which is correct at tens of rows and would be wrong at

@@ -12,6 +12,7 @@
   var state = null;
   var currentYear = null; // tax year (number)
   var editingId = null; // item id open in the drawer
+  var drawerOpenerId = null; // item id whose row should regain focus on close
 
   var view = {
     query: "",
@@ -470,6 +471,7 @@
   }
 
   function openDrawer(id, focusName) {
+    drawerOpenerId = id;
     editingId = id;
     renderDrawer();
     el.drawer.classList.add("is-open");
@@ -479,14 +481,37 @@
     if (nameField) {
       nameField.focus();
       if (focusName) nameField.select();
+    } else {
+      el.drawer.focus();
     }
   }
 
+  // Focusable elements inside the drawer, in DOM order — used to trap Tab
+  // while it is open and to know its first/last stop.
+  function drawerFocusables() {
+    return Array.prototype.slice
+      .call(
+        el.drawer.querySelectorAll(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+        )
+      )
+      .filter(function (elm) {
+        return elm.offsetParent !== null;
+      });
+  }
+
   function closeDrawer() {
+    var openerId = drawerOpenerId;
     editingId = null;
+    drawerOpenerId = null;
     el.drawer.classList.remove("is-open");
     el.scrim.classList.remove("is-open");
     el.drawer.setAttribute("aria-hidden", "true");
+    // Return focus to the row's "Edit" control rather than dropping it to
+    // <body> — the row itself is not a focus stop, that button is.
+    var trigger =
+      openerId && el.checklist.querySelector('[data-open="' + openerId + '"]');
+    if (trigger) trigger.focus();
   }
 
   function renderDrawer() {
@@ -963,6 +988,20 @@
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && editingId) {
         closeDrawer();
+        return;
+      }
+      // Trap Tab inside the drawer while it is open — a dialog must not
+      // hand focus back to the page behind it.
+      if (e.key === "Tab" && editingId) {
+        var focusables = drawerFocusables();
+        if (!focusables.length) return;
+        var first = focusables[0];
+        var last = focusables[focusables.length - 1];
+        var active = document.activeElement;
+        if (e.shiftKey ? active === first || !el.drawer.contains(active) : active === last || !el.drawer.contains(active)) {
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+        }
         return;
       }
       // "/" focuses search, the way every list view worth using does.

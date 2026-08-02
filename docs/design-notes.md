@@ -111,8 +111,8 @@ documents (add one). A single generic "nothing here" would be useless in all thr
 - Toasts are a polite live region.
 - Focus rings are visible and use the brand colour — the one place red is load-bearing.
 - `prefers-reduced-motion` disables every transition.
-- **Known gaps:** focus is not trapped in the drawer, and closing it does not return focus
-  to the row that opened it. Both are noted in the implementation plan.
+- The drawer traps Tab while open, and closing it returns focus to the row's "⋯" edit
+  control rather than dropping it to `<body>`.
 
 ## Print
 
