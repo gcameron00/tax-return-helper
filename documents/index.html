@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Documents · Tax Return Helper</title>
+    <meta name="description" content="Planned: a file transfer area so the tax advisor can collect the documents." />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <script>
+      (function () {
+        try {
+          var p = localStorage.getItem("trh.theme");
+          var dark = p === "dark" || (!p && matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+        } catch (e) {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="visually-hidden" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap site-header__inner">
+        <a class="brand" href="/">
+          <span class="brand__mark">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5 8 14.5 16 5"/></svg>
+          </span>
+          <span class="brand__name">Tax Return Helper <span>· Cameron</span></span>
+        </a>
+        <nav class="nav" aria-label="Main">
+          <a href="/">Checklist</a>
+          <a href="/history/">History</a>
+          <a href="/documents/" aria-current="page">Documents<span class="soon">Soon</span></a>
+          <a href="/about/">About</a>
+          <button class="btn btn--icon btn--ghost" type="button" data-theme-toggle aria-label="Toggle theme"></button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="wrap prose">
+        <p class="eyebrow">Phase 3 · not built yet</p>
+        <h1>Document transfer</h1>
+        <p class="lede">
+          The second purpose of this site: once a document is collected, the file itself
+          gets uploaded here so the tax advisor can download everything in one place —
+          instead of a year of email attachments.
+        </p>
+
+        <div class="empty" style="margin-top:28px">
+          <div class="empty__title">Nothing to upload yet</div>
+          <p style="color:var(--c-text-3);margin-top:4px">
+            This area is a placeholder. The checklist has to work first.
+          </p>
+          <p style="margin-top:14px">
+            <a class="btn" href="/">Go to the checklist</a>
+          </p>
+        </div>
+
+        <h2>What it is meant to do</h2>
+        <ul>
+          <li><strong>Attach files to checklist rows.</strong> A row is only really "received" when the PDF is attached, so upload belongs on the item, not in a separate folder tree.</li>
+          <li><strong>Give the advisor a download.</strong> A single, expiring link per tax year — the advisor never needs an account on the family's site.</li>
+          <li><strong>Keep an audit trail.</strong> Who uploaded what and when, so a missing document is a question with an answer.</li>
+          <li><strong>Stop accepting uploads once the year is final.</strong> Same lock as the checklist.</li>
+        </ul>
+
+        <h2>Why it is not here yet</h2>
+        <p>
+          File upload is the first feature that genuinely cannot be faked in the browser:
+          it needs storage (Cloudflare R2), authentication, and a considered retention policy
+          for what is, by definition, a pile of sensitive financial documents. That work is
+          sequenced after the checklist backend — see the
+          <a href="/about/#roadmap">roadmap</a>.
+        </p>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap site-footer__inner">
+        <span>Tax Return Helper</span>
+        <a href="/about/">About</a>
+        <a href="/">Checklist</a>
+        <a href="https://github.com/gcameron00/tax-return-helper">Source</a>
+        <span class="site-footer__note">Front-end prototype · no data leaves your browser</span>
+      </div>
+    </footer>
+
+    <script defer src="/assets/js/main.js"></script>
+  </body>
+</html>

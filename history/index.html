@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>History · Tax Return Helper</title>
+    <meta name="description" content="Every tax year the family has collected documents for, newest first." />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <script>
+      (function () {
+        try {
+          var p = localStorage.getItem("trh.theme");
+          var dark = p === "dark" || (!p && matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+        } catch (e) {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="visually-hidden" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap site-header__inner">
+        <a class="brand" href="/">
+          <span class="brand__mark">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5 8 14.5 16 5"/></svg>
+          </span>
+          <span class="brand__name">Tax Return Helper <span>· Cameron</span></span>
+        </a>
+        <nav class="nav" aria-label="Main">
+          <a href="/">Checklist</a>
+          <a href="/history/" aria-current="page">History</a>
+          <a href="/documents/">Documents<span class="soon">Soon</span></a>
+          <a href="/about/">About</a>
+          <button class="btn btn--icon btn--ghost" type="button" data-theme-toggle aria-label="Toggle theme"></button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="wrap">
+        <p class="eyebrow">Archive</p>
+        <h1 class="prose" style="font-size:30px;font-weight:680;letter-spacing:-0.03em;margin-top:6px">History</h1>
+        <p class="lede" style="max-width:62ch">
+          Every year is kept exactly as it was collected. Finalised years are read-only —
+          reopen one from its checklist if something needs correcting after the fact.
+        </p>
+        <p class="hint" id="historySummary" style="margin-top:14px"></p>
+
+        <hr class="divide" />
+
+        <div class="yearlist" id="yearlist"></div>
+
+        <p class="hint" style="margin-top:24px">
+          A new year is started from the <a href="/">checklist</a> — it copies the previous
+          year's document list so nothing gets forgotten between years.
+        </p>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap site-footer__inner">
+        <span>Tax Return Helper</span>
+        <a href="/about/">About</a>
+        <a href="/">Checklist</a>
+        <a href="https://github.com/gcameron00/tax-return-helper">Source</a>
+        <span class="site-footer__note">Front-end prototype · no data leaves your browser</span>
+      </div>
+    </footer>
+
+    <script defer src="/assets/js/store.js"></script>
+    <script defer src="/assets/js/main.js"></script>
+    <script defer src="/assets/js/history.js"></script>
+  </body>
+</html>
