@@ -130,7 +130,8 @@ reading the code does not cover. That changes with the backend: phase 2 should a
 `vitest` unit suite over the pure functions in `store.js` (`tally`, `carryOver`,
 `sortedYears` — all already pure and dependency-free) and API tests against a local
 `wrangler dev`. Note that adding a `package.json` requires no `.assetsignore` change; it
-is already excluded from the deployed bundle.
+is already excluded from the deployed bundle. Written up in full, together with the manual
+pass that stands in for a suite today, in [`testing.md`](testing.md).
 
 **Accessibility.** Phase 1 ships keyboard-operable rows, labelled controls, visible focus
 rings, `aria-pressed` on the toggles, live-region toasts, and reduced-motion support. The

@@ -82,6 +82,7 @@ docs/
   data-model.md         The shape of the data and why
   implementation-plan.md Phased build-out plan
   design-notes.md       Interface and visual decisions
+  testing.md            What is checked before a change ships
 wrangler.toml           Cloudflare deploy config — do not edit
 .assetsignore           Files excluded from the deployed bundle — do not edit
 .github/workflows/      CI and deployment — do not edit
@@ -125,3 +126,5 @@ The seeded example data is fictional.
 - [`docs/implementation-plan.md`](docs/implementation-plan.md) — what was built in phase 1
   and how phases 2–4 are sequenced
 - [`docs/design-notes.md`](docs/design-notes.md) — the interface decisions and why
+- [`docs/testing.md`](docs/testing.md) — the manual pass to run before pushing, what is
+  worth automating, and the suite phase 2 should add
