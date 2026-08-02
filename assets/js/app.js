@@ -409,6 +409,7 @@
     var y = year();
     var locked = isLocked();
     var anyVisible = false;
+    var filtering = !!(view.statuses.length || view.ownerId || view.query.trim());
 
     var html = y.categories
       .map(function (cat) {
@@ -417,8 +418,6 @@
 
         // A category with no matches at all disappears while filtering, but
         // stays put (as an empty shell you can add to) when nothing is filtered.
-        var filtering =
-          view.statuses.length || view.ownerId || view.query.trim();
         if (filtering && !visible.length) return "";
 
         var t = TRH.tally(cat.items);
@@ -484,7 +483,7 @@
         "<p>Add a category to start building the " +
         y.taxYear +
         " checklist.</p></div>";
-    } else if (!anyVisible) {
+    } else if (filtering && !anyVisible) {
       html =
         '<div class="empty"><div class="empty__title">No matching documents</div>' +
         "<p>Try a different search term or clear the filters.</p></div>";
