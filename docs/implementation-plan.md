@@ -50,6 +50,18 @@ The volume is trivial either way, so correctness under concurrency is the decidi
 Schema follows [`data-model.md`](data-model.md): `people`, `tax_years`, `categories`,
 `items`, with `items.updated_at` for conflict detection.
 
+Schema migrations run as part of the GitHub Actions deploy (`wrangler d1 migrations
+apply`), the same way everything else in this repo ships — a schema change is reviewed
+in the PR and takes effect on merge, not as a separate manual step someone has to
+remember. D1's point-in-time restore covers backups; nothing extra to build there.
+
+**Cutover from `localStorage`.** As of this plan, every device is still on the seeded
+demo data, so D1 starts fresh from `TRH.seed()` and `localStorage` is retired — no import
+needed. If real household data has been entered by the time this phase actually starts,
+the existing **Export** button already produces exactly the one JSON snapshot a one-time
+import needs; write a small seed script that reads it rather than building a migration
+path speculatively now.
+
 ### 2.2 API
 
 The Worker gains a `fetch` handler in front of the static assets. Routes as listed in
@@ -58,6 +70,16 @@ because the current locks are UI-only and therefore not locks:
 
 - Writes to a year with `status = 'final'` are rejected (`409`).
 - `taxYear` is unique (`409` on duplicate creation).
+
+**Conflict policy: silent last-write-wins.** `items.updated_at` exists so a `PATCH` can
+detect a conflicting edit, but for a two-person household the right response to detecting
+one is to take the newer write and move on — not surface "Anna changed this two minutes
+ago" and make someone resolve it. Losing a duplicate tick is a minor inconvenience here,
+not the kind of data loss that justifies the UI cost of a merge prompt. Worth revisiting
+only if the household grows past the size where that assumption holds.
+
+Enable Workers Logs on the `fetch` handler. There is no ops team behind this app; "why
+didn't Anna's tick save" needs to be answerable from a log, not a guess.
 
 ### 2.3 Authentication
 
