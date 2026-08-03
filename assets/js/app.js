@@ -316,6 +316,13 @@
     return true;
   }
 
+  // Display order only — cat.items itself stays in insertion order (the
+  // stored order data-model.md documents), this just sorts a copy for
+  // rendering, so nothing about carry-over or the API changes.
+  function byName(a, b) {
+    return a.name.localeCompare(b.name, undefined, { sensitivity: "base", numeric: true });
+  }
+
   /* --- Rendering: checklist ---------------------------------------------- */
 
   function avatar(person, cls) {
@@ -413,7 +420,7 @@
 
     var html = y.categories
       .map(function (cat) {
-        var visible = cat.items.filter(matches);
+        var visible = cat.items.filter(matches).sort(byName);
         if (visible.length) anyVisible = true;
 
         // A category with no matches at all disappears while filtering, but
